@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tollar AI Agent - Demo</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* ФОН */
+        body, html {
+            margin: 0; padding: 0;
+            width: 100%; height: 100%;
+            background-color: #000;
+            background-image: url('https://github.com/AxxosHotels/Tollar-Widget/blob/main/web_background.jpg?raw=true');
+            background-size: cover;
+            background-position: center top;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            font-family: sans-serif;
+            overflow: hidden;
+        }
+
+        /* КОНТЕЙНЕР ВИДЖЕТА (Уменьшен до 120px, позиция 100px от краев) */
+        .widget-container {
+            position: fixed;
+            bottom: 100px; /* Было 30px */
+            right: 100px;  /* Было 30px */
+            width: 120px;  /* Было 150px (80%) */
+            height: 120px; /* Было 150px (80%) */
+            cursor: pointer;
+            z-index: 9999;
+        }
+
+        /* КРУГИ ПУЛЬСАЦИИ */
+        .circle {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            border-radius: 50%;
+            transition: all 0.1s ease;
+        }
+        .one {
+            background: rgba(255, 255, 255, 0.5);
+            animation: blobby 6s infinite alternate;
+            box-shadow: 0 0 12px rgba(255, 0, 0, 0.9);
+        }
+        .two {
+            background: rgba(255, 0, 0, 0.3);
+            animation: blobby 10s infinite alternate-reverse;
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.9);
+        }
+
+        /* ОКНО ВИДЕО (Аватар) */
+        .avatar-window {
+            position: absolute;
+            top: 5%; left: 0%;
+            width: 95%; height: 95%;
+            border-radius: 100%;
+            overflow: hidden;
+            z-index: 2;
+        }
+        #tollar-video { width: 100%; height: 100%; object-fit: cover; }
+
+        /* МЕНЮ ИКОНОК (Уменьшено до 52px) */
+        .channels-menu {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%; height: 100%;
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: none;
+            z-index: -1;
+        }
+        .widget-container:hover .channels-menu {
+            opacity: 1; pointer-events: auto; z-index: 10;
+        }
+        .channel {
+            position: absolute;
+            width: 52px;  /* Было 65px */
+            height: 52px; /* Было 65px */
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: white; text-decoration: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            transition: all 0.4s ease;
+        }
+        .channel i { font-size: 28px; } /* Было 35px */
+        .channel:hover { background: #dc1e28; transform: scale(1.1); }
+
+        /* Новые позиции кнопок (скорректированы под 80%) */
+        .widget-container:hover .wa { transform: translate(-38px, 4px); }
+        .widget-container:hover .chat { transform: translate(-42px, 58px); }
+        .widget-container:hover .phone { transform: translate(4px, -34px); }
+
+        /* ЗВЕЗДОЧКИ (Уменьшены) */
+        .ai-sparkles {
+            position: absolute; top: -15px; left: -15px;
+            width: calc(100% + 30px); height: calc(100% + 30px);
+            pointer-events: none; z-index: 100;
+        }
+        .sparkle {
+            position: absolute; background-color: rgba(255, 255, 255, 0.5);
+            clip-path: polygon(50% 0%, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0% 50%, 39% 39%);
+            animation: sparkle-float infinite ease-in-out;
+            opacity: 0;
+        }
+        .s1 { top: 30%; left: 75%; width: 18px; height: 18px; animation-duration: 4s; }
+        .s2 { top: 20%; left: 70%; width: 15px; height: 15px; animation-duration: 11s; }
+        .s3 { top: 25%; left: 85%; width: 10px; height: 10px; animation-duration: 7s; }
+        .s4 { top: 22%; left: 77%; width: 13px; height: 13px; animation-duration: 9s; }
+
+        /* ЧАТ-БАББЛ (Чуть уже и шрифт 13px) */
+        .chat-bubble {
+            position: absolute;
+            right: 85%; bottom: 50%;
+            width: 130px; /* Было 150px */
+            background: rgba(255, 0, 0, 0.15);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, .5);
+            border-radius: 10px 10px 0px 10px;
+            padding: 10px 14px;
+            color: white;
+            font-size: 13px;
+            line-height: 1.4;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            opacity: 0;
+            transform: translateY(15px);
+            transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: none;
+        }
+        .chat-bubble.show { opacity: 1; transform: translateY(0); }
+
+        @keyframes blobby {
+            0% { border-radius: 48% 52% 68% 32% / 42% 44% 56% 58%; transform: scale(1); }
+            50% { border-radius: 66% 34% 42% 58% / 64% 51% 49% 36%; transform: scale(1.1); }
+            100% { border-radius: 48% 52% 68% 32% / 42% 44% 56% 58%; transform: scale(1); }
+        }
+        @keyframes sparkle-float {
+            0% { transform: translate(0, 0) scale(0); opacity: 0; }
+            30% { transform: translate(4px, -12px) scale(1); opacity: 1; }
+            70% { transform: translate(-4px, -28px) scale(1); opacity: 0.8; }
+            100% { transform: translate(0, -40px) scale(0); opacity: 0; }
